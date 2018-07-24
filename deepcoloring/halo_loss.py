@@ -12,6 +12,7 @@ def flatten(x):
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+
 def build_halo_mask(fixed_depth=30, margin=21, min_fragment=50):
     """
     Function builds a configuration for halo region building

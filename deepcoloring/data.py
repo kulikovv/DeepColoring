@@ -20,6 +20,9 @@ class Reader:
 
         self.cache = {}
 
+    def __len__(self):
+        return len(self.images)
+
     def __getitem__(self, idx):
 
         if idx not in self.cache:
@@ -33,7 +36,7 @@ class Reader:
                 label = label[::self.scale, ::self.scale]
                 label = label[:rgb.shape[0], :rgb.shape[1]]
 
-            self.cache[idx] = (rgb, label)
+            self.cache[idx] = (rgb.astype(np.float32), label.astype(np.int32))
 
         return self.cache[idx]
 
@@ -64,6 +67,6 @@ class Reader:
 
             labels = np.vstack(labels)
 
-            return np.vstack(images), labels
+            return np.vstack(images).astype(np.float32), labels.astype(np.int32)
 
         return f

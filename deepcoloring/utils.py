@@ -3,11 +3,16 @@ import math
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy
+
+import skimage.exposure
+import skimage.filters
 import skimage.transform
+import skimage.util
+import skimage.measure
+import skimage.draw
+import skimage.morphology
+
 from scipy import ndimage as ndi
-from skimage import measure
-from skimage.draw import polygon
-from skimage.morphology import square, closing
 
 """
 Note: Standardization and transforms assumes
@@ -65,7 +70,8 @@ def rescale(scale, **kwargs):
             mode = 'reflect'
             order = 1
         return skimage.transform. \
-            resize(x, numpy.multiply(x.shape, axes_scale), mode=mode,cval=0, order=order, preserve_range=True, **kwargs)
+            resize(x, numpy.multiply(x.shape, axes_scale), mode=mode, cval=0, order=order, preserve_range=True,
+                   **kwargs)
 
     return f
 
@@ -85,30 +91,55 @@ def random_scale(scale_variance=0.2, **kwargs):
     return f
 
 
-def random_contrast(contrast, clip_value=0.5):
+def random_noise(prob=0.5, gain_random=0.001):
     def f(x, is_data=False):
         if is_data:
-            cont = 1. + contrast * numpy.random.randn()
-            x = numpy.clip(x * cont, -clip_value, clip_value)
+            if numpy.random.random() < prob:
+                x = skimage.util.random_noise(x, var=abs(numpy.random.randn() * gain_random))
         return x
 
     return f
 
 
-def random_brightness(brightness, clip_value=0.5):
+def blur(sigma=1., prob=0.5, gain_random=0.1):
     def f(x, is_data=False):
         if is_data:
-            x = numpy.clip(x + brightness * numpy.random.randn(), -clip_value, clip_value)
+            if numpy.random.random() < prob:
+                x = skimage.filters.gaussian(x, sigma=abs(sigma + gain_random * numpy.random.randn()))
         return x
 
     return f
 
 
-def random_transform(max_scale, max_angle, max_trans, keep_aspect_ratio=True):
+def random_contrast(low=0.2, high=0.8, gain_random=0.1):
+    def f(x, is_data=False):
+        if is_data:
+            v_min, v_max = numpy.percentile(x, (low + gain_random * numpy.random.randn(),
+                                                high + gain_random * numpy.random.randn()))
+            x = skimage.exposure.rescale_intensity(x, in_range=(v_min, v_max))
+        return x
+
+    return f
+
+
+def random_gamma(gamma=0.4, gain=0.9, gain_random=0.1, prob=0.5):
+    def f(x, is_data=False):
+        if is_data:
+            if numpy.random.random() < prob:
+                x = skimage.exposure.adjust_gamma(x, gamma=gamma + gain_random * numpy.random.randn(),
+                                                  gain=gain + gain_random * numpy.random.randn())
+        return x
+
+    return f
+
+
+def random_transform(max_scale, max_angle=90., max_trans=0., keep_aspect_ratio=True):
     """
     Rescales the image according to the scale ratio.
-    :param scale: The scalar to rescale the image by.
-    :param kwargs: Additional arguments for skimage.transform.resize.
+    :param max_scale: The scalar to rescale the image by.
+    :param max_angle: Maximum rotation.
+    :param max_trans: Maximum translation.
+    :param keep_aspect_ratio: Keep aspect ration of the image
     :return: The rescale function.
     """
 
@@ -157,7 +188,6 @@ def rgba2rgb():
     def f(x, is_data=False):
         if is_data:
             x = x[:, :, :3].astype(numpy.float32)
-            x /= 255.
         return x
 
     return f
@@ -205,12 +235,17 @@ def clip_patch_random(minsize, maxsize):
     return f
 
 
-def visualize(x_np, y_np, cmap="Set1", min_point=40, draw_text=True, cl=5):
+def visualize(x_np, y_np, min_point=40, draw_text=True, cmap="Set1"):
+    def softmax(x):
+        """Compute softmax values for each sets of scores in x."""
+        return np.exp(x) / np.sum(np.exp(x), axis=0)
+
     font = {'family': 'serif',
-        'color': 'black',
-        'weight': 'normal',
-        'size': 16,
-        }
+            'color': 'black',
+            'weight': 'normal',
+            'size': 16,
+            }
+
     color_map = [(1., 1., 1., 1.)]
     colors = matplotlib.cm.get_cmap(cmap)
     for index in range(y_np.shape[2]):
@@ -221,38 +256,102 @@ def visualize(x_np, y_np, cmap="Set1", min_point=40, draw_text=True, cl=5):
     ax1.set_title('source')
     ax1.imshow(x_np, cmap='gray')
     ax2.set_title('result')
-    picture = numpy.argmax(y_np, axis=2)
 
-    object_index = 1
-    for i in range(1, numpy.max(picture) + 1):
-        mask = numpy.zeros_like(picture)
-        mask[picture == i] = 1
+    instances = postprocess(y_np, min_point)
+    picture = numpy.argmax(y_np, 0)
+    picture[0 == instances] = 0
 
-        mask = closing(mask, square(cl))
+    for obj in numpy.unique(instances)[1:]:
+        innermask = numpy.zeros_like(instances)
+        innermask[instances == obj] = 1
+        distance = ndi.distance_transform_edt(innermask)
+        r, c = numpy.unravel_index(distance.argmax(), distance.shape)
+        if draw_text:
+            ax2.text(c - 3, r + 3, r'{}'.format(int(obj)), fontdict=font)
 
-        contours = measure.find_contours(mask, 0.99)
-        for c in contours:
-            rr, cc = polygon(c[:, 0], c[:, 1])
+    ax2.imshow(picture, cmap=matplotlib.colors.ListedColormap(color_map[:y_np.shape[0]]))
 
-            if len(rr) > min_point:
-                innermask = numpy.zeros_like(picture)
-                innermask[rr, cc] = 1
-                distance = ndi.distance_transform_edt(innermask)
-                r, c = numpy.unravel_index(distance.argmax(), distance.shape)
-                if draw_text:
-                    ax2.text(c - 3, r + 3, r'{}'.format(object_index), fontdict=font)
-                object_index += 1
-            else:
-                picture[rr, cc] = 0
-    ax2.imshow(picture, cmap=matplotlib.colors.ListedColormap(color_map[:y_np.shape[2]]))
-
-    f2, ax = plt.subplots(int(math.ceil(y_np.shape[2] / 3.)), 3, figsize=(20, 10))
-    for index in range(y_np.shape[2]):
+    y_np = softmax(y_np)
+    f2, ax = plt.subplots(int(math.ceil(y_np.shape[0] / 3.)), 3, figsize=(20, 10))
+    for index in range(y_np.shape[0]):
         color_index = -1
         color_index2 = index
 
         cmap = matplotlib.colors.LinearSegmentedColormap.from_list('xxx',
                                                                    [color_map[color_index], color_map[color_index2]])
-        ax[index / 3, index % 3].imshow(y_np[:, :, index], vmin=0, vmax=1, cmap=cmap)
+        ax[index / 3, index % 3].imshow(y_np[index, :, :], vmin=0, vmax=1, cmap=cmap)
 
     return f1, f2
+
+
+def best_dice(l_a, l_b):
+    """
+    Best Dice function
+    :param l_a: list of binary instances masks
+    :param l_b: list of binary instances masks
+    :return: best dice estimation
+    """
+    result = 0
+    for a in l_a:
+        best_iter = 0
+        for b in l_b:
+            inter = 2 * float(numpy.sum(a * b)) / float(numpy.sum(a) + numpy.sum(b))
+            if inter > best_iter:
+                best_iter = inter
+        result += best_iter
+    if 0 == len(l_a):
+        return 0
+
+    return result / len(l_a)
+
+
+def symmetric_best_dice(l_ar, l_gr):
+    """
+    Symmetric Best Dice function
+    :param l_ar: list of output binary instances masks
+    :param l_gr: list of binary ground truth masks
+    :return: Symmetric best dice estimation
+    """
+    return numpy.min([best_dice(l_ar, l_gr), best_dice(l_gr, l_ar)])
+
+
+def get_as_list(indexes):
+    """
+    Convert indexes to list
+    """
+    objects = []
+    pixels = numpy.unique(indexes)
+    for l, v in enumerate(pixels[1:]):
+        bin_mask = numpy.zeros_like(indexes)
+        bin_mask[indexes == v] = 1
+        objects.append(bin_mask)
+    return objects
+
+
+def postprocess(mapsx, min_point):
+    """
+    Segment a maps to individual objects
+    :param maps: numpy array wxhxd
+    :param thresholds: list of threshold of length d-1, applied to probability maps
+    :param min_point: list of minimal connected component of length d-1
+    :return: int32 image with unique id for each instance
+    """
+
+    if not isinstance(min_point, list):
+        min_point = [min_point] * (mapsx.shape[2] - 1)
+
+    assert (mapsx.shape[2] == (len(min_point) + 1))
+
+    object_index = 1
+    argmaxes = numpy.argmax(mapsx, axis=0)
+    output = numpy.zeros_like(mapsx[0, :, :])
+
+    for i in range(1, mapsx.shape[0]):
+        contours = skimage.measure.find_contours(argmaxes == i, 0.5)
+        for c in contours:
+            rr, cc = skimage.draw.polygon(c[:, 0], c[:, 1])
+            if len(rr) > min_point[i - 1]:
+                output[rr, cc] = object_index
+                object_index += 1
+
+    return output
