@@ -10,7 +10,7 @@ setuptools.setup(
         "torch"
     ],
     packages=setuptools.find_packages(
-        exclude=["cvppp"]
+        exclude=["cvppp","ecoli"]
     ),
     license="GPL-v3",
     name="deepcoloring",

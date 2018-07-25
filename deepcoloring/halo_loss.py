@@ -51,7 +51,7 @@ def build_halo_mask(fixed_depth=30, margin=21, min_fragment=50):
         masks = F.conv2d(labels, sel, groups=fixed_depth, padding=margin / 2)
 
         masks[masks > 0] = 1.
-        masks += labels
+        #masks += labels
         masks[:, 0, :, :] = 1.
         return labels, masks, object_list
 

@@ -105,7 +105,7 @@ def blur(sigma=1., prob=0.5, gain_random=0.1):
     def f(x, is_data=False):
         if is_data:
             if numpy.random.random() < prob:
-                x = skimage.filters.gaussian(x, sigma=abs(sigma + gain_random * numpy.random.randn()))
+                x = skimage.filters.gaussian(x, sigma=abs(sigma + gain_random * numpy.random.randn()),preserve_range=True,multichannel=True)
         return x
 
     return f
@@ -238,7 +238,7 @@ def clip_patch_random(minsize, maxsize):
 def visualize(x_np, y_np, min_point=40, draw_text=True, cmap="Set1"):
     def softmax(x):
         """Compute softmax values for each sets of scores in x."""
-        return np.exp(x) / np.sum(np.exp(x), axis=0)
+        return numpy.exp(x) / numpy.sum(numpy.exp(x), axis=0)
 
     font = {'family': 'serif',
             'color': 'black',

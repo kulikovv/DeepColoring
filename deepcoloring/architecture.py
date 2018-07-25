@@ -73,7 +73,7 @@ class EUnet(nn.Module):
     """
 
     def __init__(self, in_dims, out_dims, k=1, s=1, l=1, depth=3, base=8, init_xavier=False, padding=0,
-                 non_linearity=nn.ELU, use_dropout=False, use_bn=False):
+                 non_linearity=nn.ReLU, use_dropout=False, use_bn=False):
         """
         Creates a u-net network
         :param in_dims: input image number of channels
@@ -104,7 +104,7 @@ class EUnet(nn.Module):
         for m in self.modules():
             if isinstance(m, nn.Conv2d) or isinstance(m, nn.ConvTranspose2d):
                 if init_xavier:
-                    torch.nn.init.xavier_uniform(m.weight)
+                    torch.nn.init.xavier_uniform_(m.weight)
                 else:
                     n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
                     m.weight.data.normal_(0, math.sqrt(2. / n))

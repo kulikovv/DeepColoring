@@ -27,7 +27,7 @@ class Reader:
 
         if idx not in self.cache:
             rgb = imread(self.images[idx], plugin='pil')
-            rgb = transform.resize(rgb, np.array(rgb.shape[:2]) / self.scale)
+            rgb = transform.resize(rgb, np.array(rgb.shape[:2]) / self.scale,   mode='constant')
 
             label = None
             if idx < len(self.labels):

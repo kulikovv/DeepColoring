@@ -20,4 +20,4 @@ from utils import visualize, \
     blur,\
     postprocess
 from data import Reader
-from train import evaluate, train
+from train import train

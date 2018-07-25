@@ -3,9 +3,8 @@ import sys
 import numpy
 import torch
 
-from data import Reader
 from halo_loss import halo_loss
-from utils import rgba2rgb, normalize, postprocess, symmetric_best_dice, get_as_list
+
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -60,34 +59,3 @@ def train(generator, model, mask_builder,
     torch.save(model.state_dict(), caption + '.t7')
     numpy.savetxt(caption + '.txt', errors, "%5.5f")
     return model, errors
-
-
-def evaluate(data, model, min_points):
-    """
-    Estimates the 
-    :param data: 
-    :param model: 
-    :param min_points: 
-    :return: 
-    """
-    assert isinstance(data, Reader)
-
-    res = []
-    model.eval()
-
-    for i in range(len(data)):
-        x, y = data[i]
-        x = rgba2rgb()(x, True)
-        x = normalize(0.5, 0.5, )(x, True)
-        x = x.transpose(2, 0, 1)[:, :248, :248]
-
-        vx = torch.from_numpy(numpy.expand_dims(x, 0)).to(device)
-        p = model(vx)
-        p_numpy = p.detach().cpu().numpy()[0]
-
-        ground_truth = get_as_list(y[:248, :248])
-        instances = postprocess(p_numpy, min_points)
-        detected_masks = get_as_list(instances)
-        res.append(symmetric_best_dice(ground_truth, detected_masks))
-
-    return numpy.array(res).mean(axis=0), numpy.array(res).std(axis=0)
