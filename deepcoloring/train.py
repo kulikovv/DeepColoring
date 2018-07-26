@@ -48,13 +48,13 @@ def train(generator, model, mask_builder,
             torch.save(model.state_dict(), caption + '.t7')
 
         if verbose:
-            percent = int(float(i) / float(niter) * 20.)
+            percent = int(float(i) / float(niter)*20.)
             if percent_old != percent:
                 percent_old = percent
                 print_percent(percent)
 
     if verbose:
-        print_percent(100)
+        print_percent(20)
 
     torch.save(model.state_dict(), caption + '.t7')
     numpy.savetxt(caption + '.txt', errors, "%5.5f")

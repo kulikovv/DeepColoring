@@ -1,8 +1,9 @@
+directory = ""
 if __name__ == '__main__':
     from os import sys, path
 
-    directory = path.dirname(path.dirname(path.abspath(__file__)))
-    sys.path.append(directory)
+    directory = path.dirname(path.abspath(__file__))
+    sys.path.append(path.dirname(directory))
 
 from os import listdir
 from os.path import join
@@ -34,13 +35,13 @@ def evaluate(data, model, min_points):
         x, y = data[i]
         x = rgba2rgb()(x, True)
         x = normalize(0.5, 0.5, )(x, True)
-        x = x.transpose(2, 0, 1)[:, :248, :248]
+        x = x.transpose(2, 0, 1)[:, :240, :240]
 
         vx = torch.from_numpy(numpy.expand_dims(x, 0)).to(device)
         p = model(vx)
         p_numpy = p.detach().cpu().numpy()[0]
 
-        ground_truth = get_as_list(y[:248, :248])
+        ground_truth = get_as_list(y[:240, :240])
         instances = postprocess(p_numpy, min_points)
         detected_masks = get_as_list(instances)
         res.append(symmetric_best_dice(ground_truth, detected_masks))
@@ -84,6 +85,10 @@ if __name__ == "__main__":
     mask_builder = dc.build_halo_mask()
 
     net = dc.EUnet(3, 9, 4, 3, 1, depth=4, padding=1, init_xavier=True, use_bn=True, use_dropout=True).to(device)
-    model, errors = dc.train(generator=generator, model=net, mask_builder=mask_builder, niter=10000)
+    model, errors = dc.train(generator=generator,
+                             model=net,
+                             mask_builder=mask_builder,
+                             niter=10000,
+                             caption=join(directory, "model"))
 
-    print(evaluate(valid_data, net, d=65))
+    print(evaluate(valid_data, net, 65))
