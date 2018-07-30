@@ -1,6 +1,10 @@
 # DeepColoring
 Instance Segmentation by Deep Coloring
-(Paper preprint)[https://arxiv.org/abs/1807.10007]
+
+
+[Paper preprint](https://arxiv.org/abs/1807.10007)
+
+
 ![Alt text](images/pipeline.png?raw=true "DeepColoring Pipeline")
 
 ### About
@@ -9,6 +13,9 @@ We propose a new and, arguably, a very simple reduction of instance segmentation
 ### Test with pretrained models
 1. For cvppp run notebook cvppp/cvppp.ipynb, follow code
 2. For ecoli run notebook ecoli/ecoli.ipynb, follow code
+
+### Trainging guidelines
+To come soon
 
 ### Instance segmentation for Cityscapes
 (TF code to come soon)
