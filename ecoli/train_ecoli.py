@@ -46,8 +46,7 @@ if __name__ == "__main__":
                   dc.flip_horizontally(),
                   dc.flip_vertically(),
                   dc.rotate90(),
-                  dc.blur(),
-                  dc.normalize(0.5, 0.5)]
+                  dc.normalize(128., 128.)]
 
     generator = train_data.create_batch_generator(20, transforms=transforms)
     mask_builder = clip_mask_builder(dc.build_halo_mask(fixed_depth=100))
