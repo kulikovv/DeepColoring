@@ -81,5 +81,4 @@ if __name__ == "__main__":
                              niter=7000,
                              k_neg=5.,
                              lr=1e-3,
-                             norm=True,
                              caption=join(directory, "model"))

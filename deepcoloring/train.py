@@ -3,7 +3,7 @@ import sys
 import numpy
 import torch
 
-from halo_loss import halo_loss, halo_loss_nn
+from halo_loss import halo_loss
 
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -14,8 +14,7 @@ def train(generator, model, mask_builder,
           lr=1e-3,
           caption="model",
           k_neg=7,
-          verbose=True,
-          norm=True):
+          verbose=True):
 
     def print_percent(percent):
         sys.stdout.write('\r')

@@ -21,6 +21,8 @@ def build_halo_mask(fixed_depth=30, margin=21, min_fragment=10):
     :param min_fragment: Minimal size of an object on the image
     :return: a function for generation labels, masks and object_lists used by halo loss
     """
+    assert margin % 2 is not 0, "Margin should be odd"
+
     rr, cc = circle(margin / 2, margin / 2, margin / 2 + 1, shape=(margin, margin))
     structure_element = numpy.zeros((margin, margin))
     structure_element[rr, cc] = 1
