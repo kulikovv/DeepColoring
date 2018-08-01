@@ -13,7 +13,8 @@ We propose a new and, arguably, a very simple reduction of instance segmentation
 2. For ecoli run notebook ecoli/ecoli.ipynb, follow code
 
 ### Trainging guidelines
-To come soon
+1. [Guideline for cvppp](cvppp/README.md)
+2. [Guideline for ecoli](ecoli/README.md)
 
 ### Instance segmentation for Cityscapes
 (TF code to come soon)
