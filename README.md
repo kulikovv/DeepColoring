@@ -1,6 +1,5 @@
-# DeepColoring
-Instance Segmentation by Deep Coloring
-
+# Instance Segmentation by Deep Coloring
+---
 
 [Paper preprint](https://arxiv.org/abs/1807.10007)
 
