@@ -193,6 +193,15 @@ def rgba2rgb():
     return f
 
 
+def rgb2gray():
+    def f(x, is_data=False):
+        if is_data:
+            x = x[:, :, :1].astype(numpy.float32)
+        return x
+
+    return f
+
+
 def normalize(mean, std):
     def f(x, is_data=False):
         if is_data:

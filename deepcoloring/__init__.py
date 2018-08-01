@@ -18,6 +18,7 @@ from utils import visualize, \
     flip_vertically, \
     flip_horizontally, \
     blur,\
+    rgb2gray,\
     postprocess
 from data import Reader
 from train import train

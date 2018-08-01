@@ -3,7 +3,7 @@ import sys
 import numpy
 import torch
 
-from halo_loss import halo_loss
+from halo_loss import halo_loss, halo_loss_nn
 
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -14,7 +14,8 @@ def train(generator, model, mask_builder,
           lr=1e-3,
           caption="model",
           k_neg=7,
-          verbose=True):
+          verbose=True,
+          norm=True):
 
     def print_percent(percent):
         sys.stdout.write('\r')
@@ -40,6 +41,7 @@ def train(generator, model, mask_builder,
         pred = model(x_t)
         labels, halo, objects = mask_builder(y)
         loss = halo_loss(pred, labels, halo, objects, k_neg=k_neg)
+
         errors.append(loss.item())
         loss.backward()
         optimizer.step()
