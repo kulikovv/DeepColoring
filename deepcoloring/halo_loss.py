@@ -51,10 +51,16 @@ def build_halo_mask(fixed_depth=30, margin=21, min_fragment=10):
 
         labels = torch.from_numpy(back).float().to(device)
         masks = F.conv2d(labels, sel, groups=fixed_depth, padding=margin / 2)
-
+        
         masks[masks > 0] = 1.
-        #masks += labels
+        masks[labels > 0] = 2.
         masks[:, 0, :, :] = 1.
+        
+        weights=masks.sum(-1,keepdim=True).sum(-2,keepdim=True)
+        weights[weights==0.]=1.
+        
+        masks = masks/weights
+        
         return labels, masks, object_list
 
     return f
